@@ -1,0 +1,59 @@
+/* public/style.css */
+
+/* General Styling */
+body {
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* Video Grid Styling */
+#video-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+}
+
+/* Video Container Styling */
+.video-container {
+    position: relative;
+    width: 300px;
+    height: 225px;
+    background-color: black;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Video Element Styling */
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Name Tag Styling */
+.name-tag {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+/* Speaking Indicator Styling */
+.speaking-indicator {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    border-radius: 50%;
+    display: none;
+}
