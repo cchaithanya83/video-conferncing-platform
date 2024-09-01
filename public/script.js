@@ -9,6 +9,7 @@ const videoGrid = document.getElementById("video-grid");
 const toggleCameraButton = document.getElementById("toggleCamera");
 const toggleMicButton = document.getElementById("toggleMic");
 const leaveBtn = document.getElementById("leaveBtn");
+const transcriptionDiv = document.getElementById("transcription");
 
 // User information
 let userName = "";
@@ -21,6 +22,40 @@ const servers = {
     { urls: "stun:stun.l.google.com:19302" }, // Google's public STUN server
   ],
 };
+
+// Initialize Web Speech API for speech recognition
+let recognition;
+if ('webkitSpeechRecognition' in window) {
+  recognition = new webkitSpeechRecognition(); // For Chrome
+} else if ('SpeechRecognition' in window) {
+  recognition = new SpeechRecognition(); // For other browsers
+} else {
+  console.warn('Web Speech API is not supported in this browser.');
+}
+
+if (recognition) {
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    updateTranscription(transcript);
+  };
+
+  recognition.onerror = (event) => {
+    console.error('Speech recognition error:', event.error);
+  };
+
+  recognition.onend = () => {
+    console.log('Speech recognition ended.');
+    // Optionally restart recognition
+    recognition.start();
+  };
+
+  // Start recognizing
+  recognition.start();
+}
 
 // Prompt user for their name and join the conference
 joinBtn.addEventListener("click", () => {
@@ -50,6 +85,11 @@ function initialize() {
       console.error("Error accessing media devices.", error);
       alert("Could not access camera and microphone.");
     });
+}
+
+// Update transcription text in the UI (replace old text)
+function updateTranscription(text) {
+  transcriptionDiv.textContent = text;
 }
 
 // Listen for users connecting to the room
@@ -229,75 +269,53 @@ function removeVideoStream(peerId) {
 function setupControls() {
   // Toggle Camera
   toggleCameraButton.addEventListener("click", () => {
-    const videoTrack = localStream.getVideoTracks()[0];
-    if (videoTrack) {
-      videoTrack.enabled = !videoTrack.enabled;
-      toggleCameraButton.textContent = videoTrack.enabled
-        ? "Turn Camera Off"
-        : "Turn Camera On";
-    }
+    const videoTracks = localStream.getVideoTracks();
+    videoTracks.forEach((track) => (track.enabled = !track.enabled));
+    toggleCameraButton.textContent = videoTracks[0].enabled ? "Turn Camera Off" : "Turn Camera On";
   });
 
-  // Toggle Microphone
+  // Toggle Mic
   toggleMicButton.addEventListener("click", () => {
-    const audioTrack = localStream.getAudioTracks()[0];
-    if (audioTrack) {
-      audioTrack.enabled = !audioTrack.enabled;
-      toggleMicButton.textContent = audioTrack.enabled
-        ? "Turn Mic Off"
-        : "Turn Mic On";
-    }
+    const audioTracks = localStream.getAudioTracks();
+    audioTracks.forEach((track) => (track.enabled = !track.enabled));
+    toggleMicButton.textContent = audioTracks[0].enabled ? "Turn Mic Off" : "Turn Mic On";
   });
 
-  // Leave Conference
+  // Leave Room
   leaveBtn.addEventListener("click", () => {
-    // Close all peer connections
+    if (localStream) {
+      localStream.getTracks().forEach((track) => track.stop());
+    }
     for (let peerId in peers) {
       peers[peerId].connection.close();
     }
-    peers = {};
-
-    // Stop all local media tracks
-    localStream.getTracks().forEach((track) => track.stop());
-
-    // Remove all video elements
-    videoGrid.innerHTML = "";
-
-    // Reload the page to reset
+    socket.emit("leave-room");
     window.location.reload();
   });
 }
 
-// Function to monitor audio and display speaking indicator
+// Monitor audio levels (for visualization)
 function monitorAudio(stream, peerId, isLocal) {
-  const videoContainer = document.getElementById(`video-container-${peerId}`);
-  if (!videoContainer) return;
-  const speakingIndicator = videoContainer.querySelector(".speaking-indicator");
-
-  const audioContext = new AudioContext();
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   const analyser = audioContext.createAnalyser();
   const source = audioContext.createMediaStreamSource(stream);
   source.connect(analyser);
-  analyser.fftSize = 256;
+
+  // Create an array to hold audio data
   const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-  function detectSpeaking() {
+  function updateAudioLevel() {
     analyser.getByteFrequencyData(dataArray);
-    let sum = 0;
-    for (let i = 0; i < dataArray.length; i++) {
-      sum += dataArray[i];
-    }
-    const avg = sum / dataArray.length;
-    const threshold = isLocal ? 20 : 30; // Adjust thresholds as needed
+    const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
 
-    if (avg > threshold) {
-      speakingIndicator.style.display = "block";
-    } else {
-      speakingIndicator.style.display = "none";
+    // Adjust the UI based on audio level (example)
+    const speakingIndicator = document.querySelector(`#video-container-${peerId} .speaking-indicator`);
+    if (speakingIndicator) {
+      speakingIndicator.style.backgroundColor = average > 50 ? 'red' : 'gray'; // Example threshold
     }
 
-    requestAnimationFrame(detectSpeaking);
+    requestAnimationFrame(updateAudioLevel);
   }
 
-  detectSpeaking();
+  updateAudioLevel();
 }
