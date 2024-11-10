@@ -1,45 +1,74 @@
-// server.js
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
+const { SpeechClient } = require("@google-cloud/speech");
+const stream = require("stream");
 
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
+// Initialize Google Cloud Speech-to-Text client
+const speechClient = new SpeechClient();
+
 // Serve static files from the 'public' directory
 app.use(express.static("public"));
 
 // Handle socket connections
+// Handle socket connections
 io.on("connection", (socket) => {
-  console.log("New user connected:", socket.id);
+  console.log("User connected:", socket.id);
 
-  // Join a room
-  socket.on("join-room", (roomID, userName) => {
-    socket.join(roomID);
-    console.log(`${userName} joined room: ${roomID}`);
+  // Join room based on roomId
+  socket.on("join-room", (roomId, userName) => {
+    socket.join(roomId);
+    console.log(`User ${userName} joined room: ${roomId}`);
+    socket.to(roomId).emit("user-joined", userName);
+  });
 
-    // Notify others in the room about the new user
-    socket.to(roomID).emit("user-connected", socket.id, userName);
+  // Handle audio stream from client
+  socket.on("audio-stream", (audioData) => {
+    console.log("Receiving audio stream");
 
-    // Handle signaling messages
-    socket.on("signal", (data) => {
-      // Data contains: to, signal, userName
-      io.to(data.to).emit("signal", {
-        from: socket.id,
-        signal: data.signal,
-        userName: data.userName,
+    // Convert base64-encoded audio data back to binary
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(Buffer.from(audioData, "base64"));
+
+    // Configure the request for Google Speech API
+    const request = {
+      config: {
+        encoding: "LINEAR16",
+        sampleRateHertz: 16000,
+        languageCode: "en-US",
+      },
+      interimResults: true,
+    };
+
+    // Create a recognize stream
+    const recognizeStream = speechClient
+      .streamingRecognize(request)
+      .on("error", console.error)
+      .on("data", (data) => {
+        if (data.results[0] && data.results[0].alternatives[0]) {
+          const transcript = data.results[0].alternatives[0].transcript;
+          console.log(`Transcript: ${transcript}`);
+
+          // Send the transcript back to the client
+          socket.emit("transcription-result", transcript);
+        }
       });
-    });
 
-    // Handle disconnection
-    socket.on("disconnect", () => {
-      console.log(`${userName} disconnected`);
-      socket.to(roomID).emit("user-disconnected", socket.id, userName);
-    });
+    // Pipe audio data to Google Speech API
+    bufferStream.pipe(recognizeStream);
+  });
+
+  // Handle disconnection
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
   });
 });
+
 
 // Start the server
 const PORT = process.env.PORT || 3000;

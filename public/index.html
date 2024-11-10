@@ -1,67 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zoom-like Video Conferencing</title>
-    <!-- Bootstrap CSS for styling -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css">
-    <!-- Fallback for Web Speech API -->
-    <script>
-        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-            alert('Web Speech API is not supported in this browser. Some features may not work.');
-        }
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zoom-like Video Conferencing</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <!-- Name Input Modal -->
-    <div class="modal" id="nameModal" tabindex="-1" role="dialog" aria-labelledby="nameModalLabel" aria-hidden="true"
-        style="display: flex; align-items: center; justify-content: center;">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="nameModalLabel">Enter Your Name</h5>
-                </div>
-                <div class="modal-body">
-                    <input type="text" id="nameInput" class="form-control" placeholder="Your name" aria-label="Name input">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" id="joinBtn" class="btn btn-primary">Join</button>
-                </div>
-            </div>
+  <!-- Name Input Modal -->
+  <div class="modal" id="nameModal" tabindex="-1" role="dialog" aria-labelledby="nameModalLabel" aria-hidden="true"
+       style="display: flex; align-items: center; justify-content: center;">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="nameModalLabel">Enter Your Name</h5>
         </div>
+        <div class="modal-body">
+          <input type="text" id="nameInput" class="form-control" placeholder="Your Name">
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="joinBtn" class="btn btn-primary">Join Conference</button>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Main Content -->
-    <div class="container-fluid">
-        <div class="row justify-content-center">
-            <div class="col-12">
-                <h1 class="text-center my-4">Video Conferencing</h1>
-            </div>
-        </div>
-        <div class="row justify-content-center" id="video-grid">
-            <!-- Video elements will be added here dynamically -->
-        </div>
-        <div id="transcription">
-            <!-- Transcription texts will appear here -->
-        </div>
-        <div class="row justify-content-center mt-4">
-            <div class="col-12 text-center">
-                <button id="toggleCamera" class="btn btn-danger mr-2">Turn Camera Off</button>
-                <button id="toggleMic" class="btn btn-danger mr-2">Turn Mic Off</button>
-                <button id="leaveBtn" class="btn btn-secondary">Leave</button>
-            </div>
-        </div>
-    </div>
+  <!-- Video Grid -->
+  <div id="video-grid" class="d-flex flex-wrap justify-content-center"></div>
 
-    <!-- Socket.IO Client Library -->
-    <script src="/socket.io/socket.io.js"></script>
-    <!-- Custom JavaScript -->
-    <script src="script.js"></script>
+  <!-- Transcription Div -->
+  <div id="transcription" class="p-2 text-center"></div>
+
+  <!-- Controls -->
+  <div class="controls d-flex justify-content-center">
+    <button id="toggleCamera" class="btn btn-warning m-2">Turn Camera Off</button>
+    <button id="toggleMic" class="btn btn-warning m-2">Turn Mic Off</button>
+    <button id="leaveBtn" class="btn btn-danger m-2">Leave Room</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
 </body>
-
 </html>
