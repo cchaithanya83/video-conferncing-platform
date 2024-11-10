@@ -1,14 +1,5 @@
 const socket = io();
 
-// Extract Room ID from URL
-const roomId = window.location.pathname.split('/').pop();
-
-// Check if roomId is valid; if not, handle it
-if (!roomId) {
-  alert("Invalid room ID");
-  window.location.href = "/"; // Redirect to the homepage or an error page if no ID is provided
-}
-
 // DOM elements
 const nameModal = document.getElementById("nameModal");
 const nameInput = document.getElementById("nameInput");
@@ -62,9 +53,6 @@ joinBtn.addEventListener("click", () => {
 
 // Initialize the application
 function initialize() {
-  // Emit an event to join the specified room on the server
-  socket.emit("join-room", roomId, userName);
-
   // Get user's media (camera and microphone)
   navigator.mediaDevices
     .getUserMedia({ video: true, audio: true })

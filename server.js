@@ -16,16 +16,8 @@ const speechClient = new SpeechClient();
 app.use(express.static("public"));
 
 // Handle socket connections
-// Handle socket connections
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
-
-  // Join room based on roomId
-  socket.on("join-room", (roomId, userName) => {
-    socket.join(roomId);
-    console.log(`User ${userName} joined room: ${roomId}`);
-    socket.to(roomId).emit("user-joined", userName);
-  });
 
   // Handle audio stream from client
   socket.on("audio-stream", (audioData) => {
@@ -68,7 +60,6 @@ io.on("connection", (socket) => {
     console.log("User disconnected:", socket.id);
   });
 });
-
 
 // Start the server
 const PORT = process.env.PORT || 3000;
